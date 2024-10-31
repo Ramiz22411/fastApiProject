@@ -18,7 +18,6 @@ app = FastAPI(
     title="bookly",
     description="A REST AOI for book review web service",
     version=version,
-    lifespan=lifespan,
 )
 
 app.include_router(book_router, prefix=f"/api/{version}/books", tags=["books"])
