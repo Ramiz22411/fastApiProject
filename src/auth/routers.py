@@ -14,7 +14,7 @@ from fastapi.exceptions import HTTPException
 
 auth_router = APIRouter()
 user_service = UserService()
-role_checker = RoleChecker(["admin"])
+role_checker = RoleChecker(["admin", "user"])
 REFRESH_TOKEN_EXPIRY = 2
 
 
