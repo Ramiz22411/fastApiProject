@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, status
 
 from .dependencies import RefreshTokenBearer, AccessTokenBearer, get_current_user, RoleChecker
-from .schemas import UserCreateModel, UserModel, UserLoginModel
+from .schemas import UserCreateModel, UserModel, UserLoginModel, UserBooksModel
 from .service import UserService
 from .utils import create_access_token, decode_token, verify_passwd
 from fastapi.responses import JSONResponse
@@ -20,7 +20,7 @@ REFRESH_TOKEN_EXPIRY = 2
 
 # Bearer = Token
 
-@auth_router.post("/signup", status_code=status.HTTP_201_CREATED)
+@auth_router.post("/signup", status_code=status.HTTP_201_CREATED, response_model=UserModel)
 async def create_user(user_data: UserCreateModel, session: AsyncSession = Depends(get_session)):
     email = user_data.email
     user_exists = await user_service.user_exists(email, session)
@@ -89,7 +89,7 @@ async def get_new_access_token(token_details: dict = Depends(RefreshTokenBearer(
     raise HTTPException(status_code=status.HHTP_400_BAD_REQUEST, detail="Refresh token expired")
 
 
-@auth_router.get("/me", response_model=UserModel)
+@auth_router.get("/me", response_model=UserBooksModel)
 async def get_curr_user(user=Depends(get_current_user), _: bool = Depends(role_checker)):
     return user
 
