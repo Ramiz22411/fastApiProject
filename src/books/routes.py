@@ -3,7 +3,7 @@ from typing import List
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from .schemas import BookUpdate, CreateBookModel, Book
+from .schemas import BookUpdate, CreateBookModel, Book, BookDetails
 from fastapi.exceptions import HTTPException
 from src.db.main import get_session
 from src.books.service import BookService
@@ -37,7 +37,7 @@ async def creat_book(book_data: CreateBookModel,
     return new_book
 
 
-@book_router.get("/{book_uid}", response_model=Book, dependencies=[Depends(role_checker)])
+@book_router.get("/{book_uid}", response_model=BookDetails, dependencies=[Depends(role_checker)])
 async def get_detail(book_uid: str, session: AsyncSession = Depends(get_session),
                      token_details: dict=Depends(access_token_bearer)) -> dict:
     book = await book_service.get_book(book_uid, session)
