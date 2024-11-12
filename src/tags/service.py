@@ -4,6 +4,7 @@ from sqlmodel import desc, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.books.service import BookService
+from src.error import TagNotFound, BookNotFound, TagAlreadyExists
 from src.db.models import Tag
 
 from .schemas import TagAddModel, TagCreateModel
@@ -24,10 +25,10 @@ class TagService:
         book = await book_service.get_book(book_uid=book_uid, session=session)
 
         if not book:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
+            raise BookNotFound()
 
         if not tag_data.tags:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No tags provided")
+            raise TagNotFound()
 
         for tag_item in tag_data.tags:
             result = await session.exec(select(Tag).where(Tag.name == tag_item.name))
@@ -57,7 +58,7 @@ class TagService:
         tag = result.first()
 
         if tag:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tag already exists")
+            raise TagAlreadyExists()
         new_tag = Tag(name=tag_data.name)
 
         session.add(new_tag)
@@ -69,7 +70,7 @@ class TagService:
         tag = await self.get_tag_by_uid(tag_uid, session)
 
         if not tag:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag not found")
+            raise TagNotFound()
         update_data_dict = tag_update_data.model_dump()
 
         for k, v in update_data_dict.items():
@@ -85,7 +86,7 @@ class TagService:
         tag = await self.get_tag_by_uid(tag_uid, session)
 
         if not tag:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag not found")
+            raise TagNotFound()
 
         await session.delete(tag)
         await session.commit()

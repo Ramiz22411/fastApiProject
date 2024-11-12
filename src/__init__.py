@@ -5,6 +5,7 @@ from src.db.main import init_db
 from src.auth.routers import auth_router
 from src.reviews.routes import review_router
 from src.tags.routes import tags_router
+from .error import register_all_error
 
 
 @asynccontextmanager
@@ -21,6 +22,8 @@ app = FastAPI(
     description="A REST AOI for book review web service",
     version=version,
 )
+
+register_all_error(app)
 
 app.include_router(book_router, prefix=f"/api/{version}/books", tags=["books"])
 app.include_router(auth_router, prefix=f"/api/{version}/auth", tags=["auth"])

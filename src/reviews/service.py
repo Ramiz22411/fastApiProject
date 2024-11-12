@@ -7,6 +7,7 @@ from src.auth.service import UserService
 from src.books.service import BookService
 from fastapi.exceptions import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
+from src.error import BookNotFound
 
 book_service = BookService()
 user_service = UserService()
@@ -22,9 +23,9 @@ class ReviewService:
             review_data_dict = review_data.model_dump()
 
             if not book:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
+                raise BookNotFound()
             if not user:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+                raise BookNotFound()
             new_review = Review(**review_data_dict, user=user, book=book)
 
             session.add(new_review)

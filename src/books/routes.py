@@ -8,6 +8,7 @@ from fastapi.exceptions import HTTPException
 from src.db.main import get_session
 from src.books.service import BookService
 from src.auth.dependencies import AccessTokenBearer, RoleChecker
+from src.error import BookNotFound, InsufficientPermissions
 
 book_router = APIRouter()
 book_service = BookService()
@@ -44,7 +45,7 @@ async def get_detail(book_uid: str, session: AsyncSession = Depends(get_session)
     if book:
         return book
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
+        raise BookNotFound()
 
 
 @book_router.delete("/{book_uid}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(role_checker)])
@@ -52,7 +53,7 @@ async def delete_book(book_uid: str, session: AsyncSession = Depends(get_session
                       token_details: dict=Depends(access_token_bearer)):
     book_to_delete = await book_service.delete_book(book_uid, session)
     if book_to_delete:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
+        raise BookNotFound()
     else:
         return {}
 
@@ -63,6 +64,6 @@ async def update_book(book_uid: str,
                       session: AsyncSession = Depends(get_session), token_details: dict=Depends(access_token_bearer)) -> dict:
     updated_book = await book_service.update_book(book_uid, book_data_update, session)
     if updated_book is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
+        raise BookNotFound()
     else:
         return updated_book

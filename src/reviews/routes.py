@@ -7,6 +7,7 @@ from .service import ReviewService
 
 from src.db.models import User
 from src.auth.dependencies import RoleChecker, get_current_user
+from src.error import BookNotFound
 
 review_router = APIRouter()
 review_service = ReviewService()
@@ -28,7 +29,7 @@ async def get_review(review_uid: str, session: AsyncSession = Depends(get_sessio
     if book:
         return book
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
+        raise BookNotFound()
 
 
 @review_router.post("/book/{book_uid}", dependencies=[Depends(user_checker)])
