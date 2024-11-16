@@ -1,11 +1,10 @@
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, status
-from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse
 
 from .service import UserService
-from .utils import create_access_token, decode_token, verify_passwd
+from .utils import create_access_token, verify_passwd
 from .dependencies import RefreshTokenBearer, AccessTokenBearer, get_current_user, RoleChecker
 from .schemas import UserCreateModel, UserModel, UserLoginModel, UserBooksModel
 
@@ -16,7 +15,6 @@ from src.db.redis import add_jti_to_blocklist
 
 from src.error import (
     UserAlreadyExists,
-    UserNotFound,
     InvalidCredentials,
     InvalidToken
 )
