@@ -1,6 +1,6 @@
 import uuid
 
-from src.books.schemas import CreateBookModel, Book
+from src.books.schemas import Book
 from src.reviews.schemas import ReviewModel
 from pydantic import BaseModel, Field
 from datetime import datetime
@@ -35,3 +35,7 @@ class UserBooksModel(UserModel):
 class UserLoginModel(BaseModel):
     email: str = Field(max_length=50)
     password: str = Field(min_length=6)
+
+
+class EmailModel(BaseModel):
+    addresses: List[str]

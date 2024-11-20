@@ -4,14 +4,16 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
 from .service import UserService
-from .utils import create_access_token, verify_passwd
+from src.email import mail, create_message
+from .utils import create_access_token, verify_passwd, decode_url_save_token, url_save_token
 from .dependencies import RefreshTokenBearer, AccessTokenBearer, get_current_user, RoleChecker
-from .schemas import UserCreateModel, UserModel, UserLoginModel, UserBooksModel
+from .schemas import UserCreateModel, UserModel, UserLoginModel, UserBooksModel, EmailModel
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.db.main import get_session
 from src.db.redis import add_jti_to_blocklist
+from src.config import Config
 
 from src.error import (
     UserAlreadyExists,
@@ -27,7 +29,24 @@ REFRESH_TOKEN_EXPIRY = 2
 
 # Bearer = Token
 
-@auth_router.post("/signup", status_code=status.HTTP_201_CREATED, response_model=UserModel)
+@auth_router.post("/send_email")
+async def send_email(emails: EmailModel):
+    emails = emails.addresses
+
+    html = "<h1>Welcome to the app</h1>"
+
+    message = create_message(
+        recipients=emails,
+        subjects="welcome",
+        body=html,
+    )
+
+    await mail.send_message(message)
+
+    return {"message": "Email sent!"}
+
+
+@auth_router.post("/signup", status_code=status.HTTP_201_CREATED)
 async def create_user(user_data: UserCreateModel, session: AsyncSession = Depends(get_session)):
     email = user_data.email
     user_exists = await user_service.user_exists(email, session)
@@ -37,7 +56,21 @@ async def create_user(user_data: UserCreateModel, session: AsyncSession = Depend
 
     new_user = await user_service.create_user(user_data, session)
 
-    return new_user
+    token = url_save_token({"email": email})
+
+    link = f"http://{Config.DOMAIN}/api/v1/auth/verify/{token}"
+    html = f"""
+        <h1>Verify your email</h1>
+        <p>Please click this <a href="{link}">link</a> to verify your email</p>
+    """
+    message = create_message(
+        recipients=[email],
+        subjects="Verify your email",
+        body=html,
+    )
+    await mail.send_message(message)
+    return {"message": "Account created! Check your email to verify your account",
+            "user": new_user}
 
 
 @auth_router.post("/login", status_code=status.HTTP_200_OK)
