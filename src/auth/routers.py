@@ -7,7 +7,7 @@ from .service import UserService
 from src.email import mail, create_message
 from .utils import create_access_token, verify_passwd, decode_url_save_token, url_save_token
 from .dependencies import RefreshTokenBearer, AccessTokenBearer, get_current_user, RoleChecker
-from .schemas import UserCreateModel, UserModel, UserLoginModel, UserBooksModel, EmailModel
+from .schemas import UserCreateModel, UserLoginModel, UserBooksModel, EmailModel
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -18,7 +18,8 @@ from src.config import Config
 from src.error import (
     UserAlreadyExists,
     InvalidCredentials,
-    InvalidToken
+    InvalidToken,
+    UserNotFound
 )
 
 auth_router = APIRouter()
@@ -71,6 +72,24 @@ async def create_user(user_data: UserCreateModel, session: AsyncSession = Depend
     await mail.send_message(message)
     return {"message": "Account created! Check your email to verify your account",
             "user": new_user}
+
+
+@auth_router.get("/verify/{token}")
+async def verifi_account(token: str, session: AsyncSession = Depends(get_session)):
+    token_date = decode_url_save_token(token)
+
+    user_email = token_date.get("email")
+
+    if user_email:
+        user = await user_service.get_user_by_email(user_email, session)
+
+        if not user:
+            raise UserNotFound()
+        await user_service.update_user(user, {"is_verified": True}, session)
+
+        return JSONResponse(content={"message": "Account verified!"}, status_code=status.HTTP_200_OK)
+    return JSONResponse(content={"message": "ERROR occurred during verification"},
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @auth_router.post("/login", status_code=status.HTTP_200_OK)
