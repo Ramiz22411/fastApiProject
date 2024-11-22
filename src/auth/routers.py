@@ -193,7 +193,7 @@ async def password_reset(email_data: PasswordRequestModel):
                         status_code=status.HTTP_200_OK)
 
 
-@auth_router.post("/verify-resset-password/{token}")
+@auth_router.post("/verify-reset-password/{token}")
 async def verify_resset_password(token: str, passwords: PasswordResetModel,
                                  session: AsyncSession = Depends(get_session)):
     new_password = passwords.new_password
