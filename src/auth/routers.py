@@ -1,11 +1,10 @@
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, BackgroundTasks
 from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse
 
 from .service import UserService
-from src.email import mail, create_message
 from .utils import create_access_token, verify_passwd, decode_url_save_token, url_save_token, generate_passwd_hash
 from .dependencies import RefreshTokenBearer, AccessTokenBearer, get_current_user, RoleChecker
 from .schemas import UserCreateModel, UserLoginModel, UserBooksModel, EmailModel, PasswordResetModel, \
@@ -16,6 +15,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from src.db.main import get_session
 from src.db.redis import add_jti_to_blocklist
 from src.config import Config
+from src.celery_task import task_email_send
 
 from src.error import (
     UserAlreadyExists,
@@ -37,20 +37,15 @@ async def send_email(emails: EmailModel):
     emails = emails.addresses
 
     html = "<h1>Welcome to the app</h1>"
+    subjects = "Welcome to the app"
 
-    message = create_message(
-        recipients=emails,
-        subjects="welcome",
-        body=html,
-    )
-
-    await mail.send_message(message)
-
+    task_email_send.delay(emails, subjects, html)
     return {"message": "Email sent!"}
 
 
 @auth_router.post("/signup", status_code=status.HTTP_201_CREATED)
-async def create_user(user_data: UserCreateModel, session: AsyncSession = Depends(get_session)):
+async def create_user(user_data: UserCreateModel,
+                      session: AsyncSession = Depends(get_session)):
     email = user_data.email
     user_exists = await user_service.user_exists(email, session)
 
@@ -66,12 +61,12 @@ async def create_user(user_data: UserCreateModel, session: AsyncSession = Depend
         <h1>Verify your email</h1>
         <p>Please click this <a href="{link}">link</a> to verify your email</p>
     """
-    message = create_message(
-        recipients=[email],
-        subjects="Verify your email",
-        body=html,
-    )
-    await mail.send_message(message)
+    subjects = "Verify your email"
+
+    emails = [email]
+
+    task_email_send.delay(emails, subjects, html)
+
     return {"message": "Account created! Check your email to verify your account",
             "user": new_user}
 
@@ -181,13 +176,7 @@ async def password_reset(email_data: PasswordRequestModel):
 
     subject = "Reset Password"
 
-    message = create_message(
-        recipients=[email],
-        subjects=subject,
-        body=html,
-    )
-
-    await mail.send_message(message)
+    task_email_send.delay([email], subject, html)
 
     return JSONResponse(content={"message": "Check your email to reset your password"},
                         status_code=status.HTTP_200_OK)
