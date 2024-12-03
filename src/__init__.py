@@ -22,6 +22,11 @@ app = FastAPI(
     title="bookly",
     description="A REST AOI for book review web service",
     version=version,
+    docs_url=f"/api/{version}/docs",
+    redoc_url=f"/api/{version}/redoc",
+    contact={
+        "email": "ramiz.rashidov@list.ru"
+    }
 )
 
 register_all_error(app)

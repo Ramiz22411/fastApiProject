@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, status, BackgroundTasks
+from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse
 
@@ -34,6 +34,7 @@ REFRESH_TOKEN_EXPIRY = 2
 
 @auth_router.post("/send_email")
 async def send_email(emails: EmailModel):
+    """Send email with sample message"""
     emails = emails.addresses
 
     html = "<h1>Welcome to the app</h1>"
@@ -46,6 +47,7 @@ async def send_email(emails: EmailModel):
 @auth_router.post("/signup", status_code=status.HTTP_201_CREATED)
 async def create_user(user_data: UserCreateModel,
                       session: AsyncSession = Depends(get_session)):
+    """Create new user account using email, param: user_data: UserCreateModel"""
     email = user_data.email
     user_exists = await user_service.user_exists(email, session)
 
@@ -73,6 +75,7 @@ async def create_user(user_data: UserCreateModel,
 
 @auth_router.get("/verify/{token}")
 async def verifi_account(token: str, session: AsyncSession = Depends(get_session)):
+    """Verify user account using token from email message"""
     token_date = decode_url_save_token(token)
 
     user_email = token_date.get("email")
@@ -91,6 +94,7 @@ async def verifi_account(token: str, session: AsyncSession = Depends(get_session
 
 @auth_router.post("/login", status_code=status.HTTP_200_OK)
 async def login_user(login_data: UserLoginModel, session: AsyncSession = Depends(get_session)):
+    """Login user and create access token and refresh token"""
     email = login_data.email
     password = login_data.password
 
@@ -147,6 +151,7 @@ async def get_new_access_token(token_details: dict = Depends(RefreshTokenBearer(
 
 @auth_router.get("/me", response_model=UserBooksModel)
 async def get_curr_user(user=Depends(get_current_user), _: bool = Depends(role_checker)):
+    """Who am i?"""
     return user
 
 
@@ -163,6 +168,7 @@ async def revoke_token(token_details: dict = Depends(AccessTokenBearer())):
 
 @auth_router.post("/password-reset")
 async def password_reset(email_data: PasswordRequestModel):
+    """Reset password for user using message email for verify"""
     email = email_data.email
 
     token = url_save_token({"email": email})

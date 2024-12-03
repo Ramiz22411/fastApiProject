@@ -4,7 +4,6 @@ from typing import List
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from .schemas import BookUpdate, CreateBookModel, Book, BookDetails
-from fastapi.exceptions import HTTPException
 from src.db.main import get_session
 from src.books.service import BookService
 from src.auth.dependencies import AccessTokenBearer, RoleChecker
@@ -19,6 +18,7 @@ role_checker = RoleChecker(["user", "admin"])
 @book_router.get("/", response_model=List[Book], dependencies=[Depends(role_checker)])
 async def get_all_books(session: AsyncSession = Depends(get_session),
                         token_details: dict=Depends(access_token_bearer)):
+    """Get All Books"""
     books = await book_service.get_all_books(session)
     return books
 
